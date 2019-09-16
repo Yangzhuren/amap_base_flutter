@@ -1,5 +1,7 @@
 package me.yohom.amapbase.search
 
+import android.os.Handler
+import android.util.Log
 import com.amap.api.services.busline.BusStationQuery
 import com.amap.api.services.busline.BusStationSearch
 import com.amap.api.services.core.AMapException
@@ -16,6 +18,7 @@ import me.yohom.amapbase.AMapBasePlugin
 import me.yohom.amapbase.AMapBasePlugin.Companion.registrar
 import me.yohom.amapbase.SearchMethodHandler
 import me.yohom.amapbase.common.*
+import me.yohom.amapbase.model.District
 
 
 /**
@@ -354,13 +357,18 @@ object SearchDistrict : SearchMethodHandler {
         val search = DistrictSearch(registrar.context())
         val query = DistrictSearchQuery().apply {
             keywords = p0.argument<String>("keyword") ?: ""
-            isShowBoundary = if (p0.hasArgument("showBoundary")) p0.argument<Boolean>("showBoundary")!! else true
+            isShowBoundary = p0.argument<Boolean>("showBoundary")!!
         }
         search.apply {
             setQuery(query)
             setOnDistrictSearchListener {
                 if (it.aMapException.errorCode == AMapException.CODE_AMAP_SUCCESS) {
-                    p1.success(it.district.toAccessorJson())
+                    Handler().post {
+                        val districts = it.district.map { item ->
+                            return@map District(item, Utils.parseData(item))
+                        }
+                        p1.success(districts.toAccessorJson())
+                    }
                 } else {
                     p1.error(it.aMapException.errorCode.toString(), it.aMapException.errorMessage, null)
                 }
