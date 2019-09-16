@@ -365,7 +365,7 @@ object SearchDistrict : SearchMethodHandler {
                 if (it.aMapException.errorCode == AMapException.CODE_AMAP_SUCCESS) {
                     Handler().post {
                         val districts = it.district.map { item ->
-                            return@map District(item, Utils.parseData(item))
+                            return@map District(item, item.districtBoundary())
                         }
                         p1.success(districts.toAccessorJson())
                     }
