@@ -50,6 +50,7 @@ val SEARCH_METHOD_HANDLER: Map<String, SearchMethodHandler> = mapOf(
         "search#searchGeocode" to SearchGeocode,
         "search#searchReGeocode" to SearchReGeocode,
         "search#searchBusStation" to SearchBusStation,
+        "search#searchDistrict" to SearchDistrict,
         "tool#distanceSearch" to DistanceSearchHandler
 )
 

@@ -4,6 +4,8 @@ import com.amap.api.services.busline.BusStationQuery
 import com.amap.api.services.busline.BusStationSearch
 import com.amap.api.services.core.AMapException
 import com.amap.api.services.core.PoiItem
+import com.amap.api.services.district.DistrictSearch
+import com.amap.api.services.district.DistrictSearchQuery
 import com.amap.api.services.geocoder.*
 import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
@@ -89,7 +91,7 @@ object SearchPoiBound : SearchMethodHandler {
         log("方法map#searchPoi android端参数: query -> $query")
 
         query.parseFieldJson<UnifiedPoiSearchQuery>()
-                .toPoiSearchBound(AMapBasePlugin.registrar.context())
+                .toPoiSearchBound(registrar.context())
                 .apply {
                     setOnPoiSearchListener(object : PoiSearch.OnPoiSearchListener {
                         override fun onPoiItemSearched(result: PoiItem?, rCode: Int) {}
@@ -117,7 +119,7 @@ object SearchPoiId : SearchMethodHandler {
 
         log("方法map#searchPoiId android端参数: id -> $id")
 
-        PoiSearch(AMapBasePlugin.registrar.context(), null).apply {
+        PoiSearch(registrar.context(), null).apply {
             setOnPoiSearchListener(object : PoiSearch.OnPoiSearchListener {
                 override fun onPoiItemSearched(result: PoiItem?, rCode: Int) {
                     if (rCode == AMapException.CODE_AMAP_SUCCESS) {
@@ -145,7 +147,7 @@ object SearchPoiKeyword : SearchMethodHandler {
         log("方法map#searchPoi android端参数: query -> $query")
 
         query.parseFieldJson<UnifiedPoiSearchQuery>()
-                .toPoiSearch(AMapBasePlugin.registrar.context())
+                .toPoiSearch(registrar.context())
                 .apply {
                     setOnPoiSearchListener(object : PoiSearch.OnPoiSearchListener {
                         override fun onPoiItemSearched(result: PoiItem?, rCode: Int) {}
@@ -173,7 +175,7 @@ object SearchPoiPolygon : SearchMethodHandler {
         log("方法map#searchPoi android端参数: query -> $query")
 
         query.parseFieldJson<UnifiedPoiSearchQuery>()
-                .toPoiSearchPolygon(AMapBasePlugin.registrar.context())
+                .toPoiSearchPolygon(registrar.context())
                 .apply {
                     setOnPoiSearchListener(object : PoiSearch.OnPoiSearchListener {
                         override fun onPoiItemSearched(result: PoiItem?, rCode: Int) {}
@@ -202,7 +204,7 @@ object SearchRoutePoiLine : SearchMethodHandler {
         log("方法map#searchRoutePoiLine android端参数: query -> $query")
 
         query.parseFieldJson<UnifiedRoutePoiSearchQuery>()
-                .toRoutePoiSearchLine(AMapBasePlugin.registrar.context())
+                .toRoutePoiSearchLine(registrar.context())
                 .apply {
                     setPoiSearchListener { result, rCode ->
                         if (rCode == AMapException.CODE_AMAP_SUCCESS) {
@@ -227,7 +229,7 @@ object SearchRoutePoiPolygon : SearchMethodHandler {
         log("方法map#searchRoutePoiPolygon android端参数: query -> $query")
 
         query.parseFieldJson<UnifiedRoutePoiSearchQuery>()
-                .toRoutePoiSearchPolygon(AMapBasePlugin.registrar.context())
+                .toRoutePoiSearchPolygon(registrar.context())
                 .apply {
                     setPoiSearchListener { result, rCode ->
                         if (rCode == AMapException.CODE_AMAP_SUCCESS) {
@@ -259,7 +261,7 @@ object CalculateDriveRoute : SearchMethodHandler {
                 param.avoidPolygons?.map { list -> list.map { it.toLatLonPoint() } },
                 param.avoidRoad
         )
-        RouteSearch(AMapBasePlugin.registrar.context()).run {
+        RouteSearch(registrar.context()).run {
             setRouteSearchListener(object : RouteSearch.OnRouteSearchListener {
                 override fun onDriveRouteSearched(r: DriveRouteResult?, errorCode: Int) {
                     if (errorCode != AMapException.CODE_AMAP_SUCCESS || r == null) {
@@ -285,7 +287,7 @@ object CalculateDriveRoute : SearchMethodHandler {
 
 object DistanceSearchHandler : SearchMethodHandler {
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        val search = DistanceSearch(AMapBasePlugin.registrar.context())
+        val search = DistanceSearch(registrar.context())
         search.setDistanceSearchListener { distanceResult, i ->
             search.setDistanceSearchListener(null)
             if (i == 1000) {
@@ -344,4 +346,28 @@ object SearchBusStation : SearchMethodHandler {
                     searchBusStationAsyn()
                 }
     }
+}
+
+object SearchDistrict : SearchMethodHandler {
+
+    override fun onMethodCall(p0: MethodCall, p1: MethodChannel.Result) {
+        val search = DistrictSearch(registrar.context())
+        val query = DistrictSearchQuery().apply {
+            keywords = p0.argument<String>("keyword") ?: ""
+            isShowBoundary = if (p0.hasArgument("showBoundary")) p0.argument<Boolean>("showBoundary")!! else true
+        }
+        search.apply {
+            setQuery(query)
+            setOnDistrictSearchListener {
+                if (it.aMapException.errorCode == AMapException.CODE_AMAP_SUCCESS) {
+                    p1.success(it.district.toAccessorJson())
+                } else {
+                    p1.error(it.aMapException.errorCode.toString(), it.aMapException.errorMessage, null)
+                }
+
+            }
+            searchDistrictAsyn()
+        }
+    }
+
 }

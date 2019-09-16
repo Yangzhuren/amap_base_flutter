@@ -184,6 +184,16 @@ class AMapSearch {
           }
         });
   }
+
+  Future<String> searchDistrict(String keyword, bool showBoundary) {
+    return _searchChannel
+        .invokeMethod("search#searchDistrict",
+            {"keyword": keyword, "showBoundary": showBoundary})
+        .then((result) => result as String)
+        .then((json) {
+          return json;
+        });
+  }
 }
 
 enum DistanceSearchType {
